@@ -46,6 +46,47 @@ DWORD WINAPI PlayChess(LPVOID lpParam)
 		send(gameInfo->player2Socket, &communicationBuffer, 2, 0);
 		bytesRecieved = 0;
 	}
+
+	while (TRUE)
+	{
+		printf("GAME #%d: Player %s (WHITE) is on turn.\n", gameInfo->gameId, gameInfo->player1Name);
+		communicationBuffer = 0;
+		if ((bytesRecieved = recv(gameInfo->player1Socket, &communicationBuffer, 2, 0)) > 0)
+		{
+			printf("GAME #%d: Player %s (WHITE) has lost the game.\n", gameInfo->gameId, gameInfo->player1Name);
+			if (communicationBuffer == endGame)
+			{
+				communicationBuffer = htons(blackVictory);
+				send(gameInfo->player2Socket, &communicationBuffer, 2, 0);
+				send(gameInfo->player1Socket, &communicationBuffer, 2, 0);
+				break;
+			}
+
+			communicationBuffer = communicationBuffer;
+			send(gameInfo->player2Socket, &communicationBuffer, 2, 0);
+			bytesRecieved = 0;
+		}
+
+		printf("GAME #%d: Player %s (BLACK) is on turn.\n", gameInfo->gameId, gameInfo->player2Name);
+		communicationBuffer = 0;
+		if ((bytesRecieved = recv(gameInfo->player2Socket, &communicationBuffer, 2, 0)) > 0)
+		{
+			if (communicationBuffer == endGame)
+			{
+				printf("GAME #%d: Player %s (BLACK) has lost the game.\n", gameInfo->gameId, gameInfo->player2Name);
+				communicationBuffer = htons(whiteVictory);
+				send(gameInfo->player1Socket, &communicationBuffer, 2, 0);
+				send(gameInfo->player2Socket, &communicationBuffer, 2, 0);
+				break;
+			}
+
+			communicationBuffer = communicationBuffer;
+			send(gameInfo->player1Socket, &communicationBuffer, 2, 0);
+			bytesRecieved = 0;
+		}
+	}
+
+	printf("GAME #%d has ended. Check the file %d.txt for the replay.\n", gameInfo->gameId, gameInfo->gameId);
 }
 
 INT32 main()

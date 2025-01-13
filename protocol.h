@@ -2,12 +2,7 @@
 
 enum protocol
 {
-	/* SERVER TO CLIENT -> MOVE VALIDATION */
-	// the most significant bit is used to signal a valid/nonvalid move
-	legalMove = 32768, // 16 bit MSB 1000... LSB
-	illegalMove = 0, // 16 bit MSB 0100... LSB
-	// server should also return the last move to the client so both can validate state
-
+	/* SERVER TO CLIENT */
 	// signals used for starting the game
 	startGameWhite = 0xFF00,
 	startGameBlack = 0x00FF,
@@ -31,7 +26,6 @@ enum protocol
 	// upon which the server will send the other client a victory
 	endGame = 16384,
 
-	// since it's not necesary to communicate a legalMove on a victory scenario,
 	// the MSB will be used to comunicate the winning side
 	// no bits should be sent in combination, 
 	// the victory message is checked using full bit AND operation (C/C++C#/Java &&)
