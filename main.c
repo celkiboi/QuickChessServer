@@ -9,7 +9,7 @@
 #pragma comment(lib, "Ws2_32.lib")
 
 #define PORT 5454
-#define MAX_GAMES 1
+#define MAX_GAMES 12
 #define MAX_CLIENTS MAX_GAMES * 2
 
 typedef struct GameInfo
@@ -62,7 +62,7 @@ DWORD WINAPI PlayChess(LPVOID lpParam)
 				break;
 			}
 
-			communicationBuffer = communicationBuffer;
+			communicationBuffer = htons(communicationBuffer);
 			send(gameInfo->player2Socket, &communicationBuffer, 2, 0);
 			bytesRecieved = 0;
 		}
@@ -80,7 +80,7 @@ DWORD WINAPI PlayChess(LPVOID lpParam)
 				break;
 			}
 
-			communicationBuffer = communicationBuffer;
+			communicationBuffer = htons(communicationBuffer);
 			send(gameInfo->player1Socket, &communicationBuffer, 2, 0);
 			bytesRecieved = 0;
 		}
