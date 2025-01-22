@@ -20,11 +20,15 @@ enum protocol
 	swapForBishop = 4096, // 3rd and 4th bit 01
 	swapForRook = 8192, // 3rd and 4th bit 10
 	swapForQueen  = 12288, // 3rd and 4th bit 11
+	// additionally the 2nd MSB will be used to communicate a pawn promotion
+	// since the first bit marks the end of game, one might think this will cause an issue
+	// but it won't since 10 and 11 mark victories, but 01 marks a pawn promotion
+	doPawnPromotion = 16384,
 
-	// when a game ends this is sent to a client to communicate victory
+	// when a game sends this is sent to a client to communicate victory
 	// client can send this to a server to communicate error or surrender (if time ran out), 
 	// upon which the server will send the other client a victory
-	endGame = 16384,
+	endGame = 32768,
 
 	// the MSB will be used to comunicate the winning side
 	// no bits should be sent in combination, 
