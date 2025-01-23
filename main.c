@@ -5,6 +5,7 @@
 #include <tchar.h>
 
 #include "protocol.h"
+#include "chess.h"
 
 #pragma comment(lib, "Ws2_32.lib")
 
@@ -28,8 +29,14 @@ DWORD WINAPI PlayChess(LPVOID lpParam)
 	GAME_INFO* gameInfo = (GAME_INFO*)lpParam;
 	UINT16 communicationBuffer;
 	UINT32 bytesRecieved = 0;
+	HANDLE replayFile;
+	CHAR fileName[10] = { '\0' };
+	UINT32 board[64] = { empty };
 
 	printf("GAME #%d: Starting game with %s - white %s - black\n", gameInfo->gameId, gameInfo->player1Name, gameInfo->player2Name);
+	sprintf_s(fileName, sizeof(fileName), "%d.txt", gameInfo->gameId);
+	replayFile = CreateFileA(fileName, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+	InitializeBoard(&board);
 
 	send(gameInfo->player1Socket, gameInfo->player2Name, gameInfo->player2NameLen, 0);
 	send(gameInfo->player2Socket, gameInfo->player1Name, gameInfo->player1NameLen, 0);
@@ -53,15 +60,16 @@ DWORD WINAPI PlayChess(LPVOID lpParam)
 		communicationBuffer = 0;
 		if ((bytesRecieved = recv(gameInfo->player1Socket, &communicationBuffer, 2, 0)) > 0)
 		{
-			printf("GAME #%d: Player %s (WHITE) has lost the game.\n", gameInfo->gameId, gameInfo->player1Name);
 			if (communicationBuffer == endGame)
 			{
+				printf("GAME #%d: Player %s (WHITE) has lost the game.\n", gameInfo->gameId, gameInfo->player1Name);
 				communicationBuffer = htons(blackVictory);
 				send(gameInfo->player2Socket, &communicationBuffer, 2, 0);
 				send(gameInfo->player1Socket, &communicationBuffer, 2, 0);
 				break;
 			}
 
+			ProcessMove(&board, communicationBuffer, replayFile, TRUE);
 			communicationBuffer = htons(communicationBuffer);
 			send(gameInfo->player2Socket, &communicationBuffer, 2, 0);
 			bytesRecieved = 0;
@@ -80,6 +88,7 @@ DWORD WINAPI PlayChess(LPVOID lpParam)
 				break;
 			}
 
+			ProcessMove(&board, communicationBuffer, replayFile, FALSE);
 			communicationBuffer = htons(communicationBuffer);
 			send(gameInfo->player1Socket, &communicationBuffer, 2, 0);
 			bytesRecieved = 0;
@@ -87,6 +96,7 @@ DWORD WINAPI PlayChess(LPVOID lpParam)
 	}
 
 	printf("GAME #%d has ended. Check the file %d.txt for the replay.\n", gameInfo->gameId, gameInfo->gameId);
+	CloseHandle(replayFile);
 }
 
 INT32 main()
