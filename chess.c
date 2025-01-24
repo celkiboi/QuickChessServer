@@ -104,33 +104,48 @@ void ProcessMove(UINT32* board, UINT16 moveData, HANDLE replayFile, BOOL enterNe
 
 	if (type == queen)
 		buffer[i++] = 'Q';
-	if (type == bishop)
+	else if (type == bishop)
 		buffer[i++] = 'B';
 	else if (type == rook)
 		buffer[i++] = 'R';
 	else if (type == knight)
 		buffer[i++] = 'N';
-	else if (type == knight)
+	else if (type == king)
 		buffer[i++] = 'K';
 
 	buffer[i++] = startColumn;
 	buffer[i++] = startRow;
 
-	buffer[i++] = hasCaptured ? 'x' : ' ';
+	buffer[i++] = hasCaptured ? 'x' : '-';
 
 	buffer[i++] = endColumn;
 	buffer[i++] = endRow;
 
-	buffer[i++] = ' ';
 
 	if (hasEnPassant)
 	{
+		buffer[i++] = ' ';
 		buffer[i++] = 'e';
 		buffer[i++] = '.';
 		buffer[i++] = 'p';
 		buffer[i++] = '.';
-		buffer[i++] = ' ';
 
 	}
+
+	if (hasPawnPromoted)
+	{
+		UINT32 piece = (moveData & swapPiece);
+		if (piece == swapForQueen)
+			buffer[i++] = 'Q';
+		else if (piece == swapForBishop)
+			buffer[i++] = 'B';
+		else if (piece == swapForRook)
+			buffer[i++] = 'R';
+		else if (piece == swapForKnight)
+			buffer[i++] = 'N';
+
+	}
+
+	buffer[i++] = ' ';
 	WriteFile(replayFile, buffer, i, &numberOfBytesWritten, NULL);
 }
