@@ -19,4 +19,4 @@ enum ChessPieceType
 
 void InitializeBoard(UINT32* board);
 
-void ProcessMove(UINT32* board, UINT16 moveData, HANDLE replayFile, BOOL enterNewRow);
+void ProcessMove(UINT32* board, UINT16 moveData, HANDLE replayFile, BOOL enterNewRow, UINT32 moveNumber);

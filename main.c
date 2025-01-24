@@ -32,11 +32,17 @@ DWORD WINAPI PlayChess(LPVOID lpParam)
 	HANDLE replayFile;
 	CHAR fileName[10] = { '\0' };
 	UINT32 board[64] = { empty };
+	UINT32 moveNumber = 1;
 
 	printf("GAME #%d: Starting game with %s - white %s - black\n", gameInfo->gameId, gameInfo->player1Name, gameInfo->player2Name);
 	sprintf_s(fileName, sizeof(fileName), "%d.txt", gameInfo->gameId);
 	replayFile = CreateFileA(fileName, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 	InitializeBoard(&board);
+	
+	CHAR begginingMessageBuffer[1024] = { '\0' };
+	DWORD numberOfBytesWritten;
+	sprintf_s(begginingMessageBuffer, sizeof(begginingMessageBuffer), "MATCH INFO:\nPlayer 1 (White): %s\nPlayer 2 (Black): %s\n", gameInfo->player1Name, gameInfo->player2Name);
+	WriteFile(replayFile, &begginingMessageBuffer, strlen(&begginingMessageBuffer), &numberOfBytesWritten, NULL);
 
 	send(gameInfo->player1Socket, gameInfo->player2Name, gameInfo->player2NameLen, 0);
 	send(gameInfo->player2Socket, gameInfo->player1Name, gameInfo->player1NameLen, 0);
@@ -69,7 +75,7 @@ DWORD WINAPI PlayChess(LPVOID lpParam)
 				break;
 			}
 
-			ProcessMove(&board, communicationBuffer, replayFile, TRUE);
+			ProcessMove(&board, communicationBuffer, replayFile, TRUE, moveNumber);
 			communicationBuffer = htons(communicationBuffer);
 			send(gameInfo->player2Socket, &communicationBuffer, 2, 0);
 			bytesRecieved = 0;
@@ -88,7 +94,7 @@ DWORD WINAPI PlayChess(LPVOID lpParam)
 				break;
 			}
 
-			ProcessMove(&board, communicationBuffer, replayFile, FALSE);
+			ProcessMove(&board, communicationBuffer, replayFile, FALSE, moveNumber++);
 			communicationBuffer = htons(communicationBuffer);
 			send(gameInfo->player1Socket, &communicationBuffer, 2, 0);
 			bytesRecieved = 0;

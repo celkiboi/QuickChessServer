@@ -1,4 +1,6 @@
 #include <Windows.h>
+#include <string.h>
+#include <stdio.h>
 #include "chess.h"
 #include "protocol.h"
 
@@ -30,12 +32,13 @@ void InitializeBoard(UINT32* board)
 	board[63] = black | rook;
 }
 
-void ProcessMove(UINT32* board, UINT16 moveData, HANDLE replayFile, BOOL enterNewRow)
+void ProcessMove(UINT32* board, UINT16 moveData, HANDLE replayFile, BOOL enterNewRow, UINT32 moveNumber)
 {
 	UINT32 start = moveData & startPosition;
 	UINT32 end = (moveData & endPosition) >> 6;
 	BOOL hasPawnPromoted = (moveData & doPawnPromotion) != 0;
 	CHAR buffer[16] = { '\0' };
+	DWORD numberOfBytesWritten;
 
 	BOOL hasCaptured = FALSE;
 	if (board[end] != empty)
@@ -49,55 +52,36 @@ void ProcessMove(UINT32* board, UINT16 moveData, HANDLE replayFile, BOOL enterNe
 	UINT8 endRow = end / 8 + 49;
 	CHAR endColumn = (end % 8) + 65;
 
-	UINT8 i = 0;
 	if (enterNewRow)
 	{
-		buffer[i] = '\n';
-		i++;
+		CHAR moveNumberBuffer[32] = { '\0' };
+		sprintf_s(&moveNumberBuffer, sizeof(moveNumberBuffer), "\n%d. ", moveNumber);
+		WriteFile(replayFile, moveNumberBuffer, strlen(&moveNumberBuffer), &numberOfBytesWritten, NULL);
 	}
+
+	UINT8 i = 0;
 
 	UINT32 type = board[end] & 0xFF;
 	if (type == queen)
-	{
-		buffer[i] = 'Q';
-		i++;
-	}
+		buffer[i++] = 'Q';
+
 	if (type == bishop)
-	{
-		buffer[i] = 'B';
-		i++;
-	}
-	if (type == rook)
-	{
-		buffer[i] = 'R';
-		i++;
-	}
-	if (type == knight)
-	{
-		buffer[i] = 'N';
-		i++;
-	}
-	if (type == knight)
-	{
-		buffer[i] = 'K';
-		i++;
-	}
+		buffer[i++] = 'B';
+	else if (type == rook)
+		buffer[i++] = 'R';
+	else if (type == knight)
+		buffer[i++] = 'N';
+	else if (type == knight)
+		buffer[i++] = 'K';
 
-	buffer[i] = startColumn;
-	i++;
-	buffer[i] = startRow;
-	i++;
+	buffer[i++] = startColumn;
+	buffer[i++] = startRow;
 
-	buffer[i] = hasCaptured ? 'x' : ' ';
-	i++;
+	buffer[i++] = hasCaptured ? 'x' : ' ';
 
-	buffer[i] = endColumn;
-	i++;
-	buffer[i] = endRow;
-	i++;
-	buffer[i] = ' ';
-	i++;
+	buffer[i++] = endColumn;
+	buffer[i++] = endRow;
+	buffer[i++] = ' ';
 
-	DWORD numberOfBytesWritten;
 	WriteFile(replayFile, buffer, i, &numberOfBytesWritten, NULL);
 }
