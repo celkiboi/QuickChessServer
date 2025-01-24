@@ -9,7 +9,6 @@
 
 #pragma comment(lib, "Ws2_32.lib")
 
-#define PORT 5454
 #define MAX_GAMES 12
 #define MAX_CLIENTS MAX_GAMES * 2
 
@@ -116,13 +115,21 @@ INT32 main()
 		return 0;
 	}
 
-	UINT16 port = PORT; // REPLACE WITH LOADING LOGIC
+	HANDLE optionFile = CreateFileA("opt.txt", GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+	CHAR portBuffer[5] = { '\0' };
+	DWORD bytesRead;
+	if (!ReadFile(optionFile, &portBuffer, 4, &bytesRead, NULL))
+	{
+		printf("Cannot read opt.txt. Error: %d", GetLastError());
+		return 1;
+	}
+	UINT16 port = atoi(portBuffer);
 
 	SOCKET listenSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_IP);
 	if (listenSocket == INVALID_SOCKET)
 	{
 		printf("Cannot start listening socket. Error: %d", WSAGetLastError());
-		returnValue = 1;
+		returnValue = 2;
 		goto exit;
 	}
 
@@ -133,7 +140,7 @@ INT32 main()
 	if (bind(listenSocket, &listenSocketAddr, sizeof(SOCKADDR_IN)) == SOCKET_ERROR)
 	{
 		printf("Cannot bind listening socket. Error: %d", WSAGetLastError());
-		returnValue = 2;
+		returnValue = 3;
 		goto exit;
 	}
 
@@ -148,14 +155,14 @@ INT32 main()
 		if (gamesInfo[i].player1Socket == INVALID_SOCKET)
 		{
 			printf("Cannot create a client socket for player 1 number %d. Error: %d", i, WSAGetLastError());
-			returnValue = 3;
+			returnValue = 4;
 			goto exit;
 		}
 		gamesInfo[i].player2Socket = socket(AF_INET, SOCK_STREAM, IPPROTO_IP);
 		if (gamesInfo[i].player2Socket == INVALID_SOCKET)
 		{
 			printf("Cannot create a client socket for player 2 number %d. Error: %d", i, WSAGetLastError());
-			returnValue = 4;
+			returnValue = 5;
 			goto exit;
 		}
 	}
