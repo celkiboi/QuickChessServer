@@ -36,13 +36,51 @@ void ProcessMove(UINT32* board, UINT16 moveData, HANDLE replayFile, BOOL enterNe
 {
 	UINT32 start = moveData & startPosition;
 	UINT32 end = (moveData & endPosition) >> 6;
+	UINT32 moverColor = (board[start] & color);
 	BOOL hasPawnPromoted = (moveData & doPawnPromotion) != 0;
-	CHAR buffer[16] = { '\0' };
-	DWORD numberOfBytesWritten;
 
 	BOOL hasCaptured = FALSE;
 	if (board[end] != empty)
 		hasCaptured = TRUE;
+	
+	UINT32 type = board[start] & 0xFF;
+	
+	UINT32 startHeight = start / 8;
+	UINT32 startWidth = start % 8;
+	BOOL hasEnPassant = FALSE;
+	// Case: white en passant
+	if (startHeight == 4 && (moverColor & color) == white && type == pawn)
+	{
+		// Case: left
+		if ((end - start) == 7 && (board[start - 1] & type) == pawn && (board[start - 1] & color) == black)
+		{
+			hasEnPassant = TRUE;
+			board[start - 1] = empty;
+		}
+		// Case: right
+		if ((end - start) == 9 && (board[start + 1] & type) == pawn && (board[start + 1] & color) == black)
+		{
+			hasEnPassant = TRUE;
+			board[start + 1] = empty;
+		}
+	}
+	// Case: black en passant
+	else if (startHeight == 3 && (moverColor & color) == black && type == pawn)
+	{
+		// Case: left
+		if ((end - start) == -9 && (board[start - 1] & type) == pawn && (board[start - 1] & color) == white)
+		{
+			hasEnPassant = TRUE;
+			board[start - 1] = empty;
+		}
+		// Case: right
+		if ((end - start) == -7 && (board[start + 1] & type) == pawn && (board[start + 1] & color) == white)
+		{
+			hasEnPassant = TRUE;
+			board[start + 1] = empty;
+		}
+	}
+	hasCaptured = hasEnPassant ? TRUE : hasCaptured;
 
 	board[end] = board[start];
 	board[start] = empty;
@@ -51,6 +89,9 @@ void ProcessMove(UINT32* board, UINT16 moveData, HANDLE replayFile, BOOL enterNe
 	CHAR startColumn = (start % 8) + 65;
 	UINT8 endRow = end / 8 + 49;
 	CHAR endColumn = (end % 8) + 65;
+
+	CHAR buffer[32] = { '\0' };
+	DWORD numberOfBytesWritten;
 
 	if (enterNewRow)
 	{
@@ -61,10 +102,8 @@ void ProcessMove(UINT32* board, UINT16 moveData, HANDLE replayFile, BOOL enterNe
 
 	UINT8 i = 0;
 
-	UINT32 type = board[end] & 0xFF;
 	if (type == queen)
 		buffer[i++] = 'Q';
-
 	if (type == bishop)
 		buffer[i++] = 'B';
 	else if (type == rook)
@@ -81,7 +120,17 @@ void ProcessMove(UINT32* board, UINT16 moveData, HANDLE replayFile, BOOL enterNe
 
 	buffer[i++] = endColumn;
 	buffer[i++] = endRow;
+
 	buffer[i++] = ' ';
 
+	if (hasEnPassant)
+	{
+		buffer[i++] = 'e';
+		buffer[i++] = '.';
+		buffer[i++] = 'p';
+		buffer[i++] = '.';
+		buffer[i++] = ' ';
+
+	}
 	WriteFile(replayFile, buffer, i, &numberOfBytesWritten, NULL);
 }
